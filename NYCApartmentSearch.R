@@ -18,28 +18,37 @@ library(shinyWidgets)
 # reading in my datasets
 # dataset 1
 #
-ZmedianAskingRent <- read_csv("/Users/hollychristensen/Desktop/finalproject/Gov1005FinalProject/medianAskingRent_All.csv")
+ZmedianAskingRent <- read_csv("medianAskingRent_All.csv")
 manhattanmedianaskingrent <- ZmedianAskingRent %>% 
   filter(Borough == "Manhattan") %>% 
   gather(key = "year_month", value = "asking_price", -c(areaName, areaType, Borough))
+
 # dataset 2
 #
-ZrentalInventory_All <- read_csv("/Users/hollychristensen/Desktop/finalproject/Gov1005FinalProject/rentalInventory_All.csv")
+ZrentalInventory_All <- read_csv("rentalInventory_All.csv")
 manhattaninventory <- ZrentalInventory_All %>% 
   filter(Borough == "Manhattan", areaType == "submarket") %>% 
   gather(key = "year_month", value = "units", -c(areaName, areaType, Borough)) %>% 
   group_by(areaName)
+
+
+midtownMI <- read_csv("midtownMI.csv") 
+midtownMI$units <- as.numeric(midtownMI$units)
+midtownMI$month <- as.numeric(midtownMI$month)
+
+
 # dataset 3
 #
-Zrollingsales_manhattan <- read_excel("/Users/hollychristensen/Desktop/finalproject/Gov1005FinalProject/rollingsales_manhattan.xls", skip = 4) 
+Zrollingsales_manhattan <- read_excel("rollingsales_manhattan.xls", skip = 4) 
 manhattan <- Zrollingsales_manhattan %>% 
   filter(`BUILDING CLASS CATEGORY` == c("01 ONE FAMILY DWELLINGS", "02 TWO FAMILY DWELLINGS", "03 THREE FAMILY DWELLINGS", "07 RENTALS - WALKUP APARTMENTS", "08 RENTALS - ELEVATOR APARTMENTS", "09 COOPS - WALKUP APARTMENTS", "10 COOPS - ELEVATOR APARTMENTS"), `SALE PRICE` <= 10000000) %>% 
   group_by(`BUILDING CLASS CATEGORY`, `NEIGHBORHOOD`)
+
 # dataset 4
 #
-ZOpen_HPD_Violations <- read_csv("/Users/hollychristensen/Desktop/finalproject/Gov1005FinalProject/Open_HPD_Violations.csv")
-manhattanHPD <- ZOpen_HPD_Violations %>% 
-  filter(Borough == 'MANHATTAN')
+# ZOpen_HPD_Violations <- read_csv("Open_HPD_Violations.csv")
+# manhattanHPD <- ZOpen_HPD_Violations %>% 
+#   filter(Borough == 'MANHATTAN')
 
 # Navigation Bar Design
 # Playing with various color choices
@@ -179,18 +188,28 @@ server <- function(input, output) {
            subtitle = "Helpful analysis for deciding when to buy")
   }
 })
+
+  plot_boroughs_Midtown <- reactive({
+    
+    plot_boroughs_Midtown <- midtownMI[midtownMI$year %in% input$year, ]
+    
+    
+  })
   
+  
+    
   output$plot_boroughs_Midtown <- renderPlot({
     # filter data for selected years
-    plot_boroughs_Midtown <- reactive({
-      plot_boroughs_Midtown <- midtownMI[midtownMI$year %in% input$year, ]
-    })
+
     
     # use if statement to create different plots for with and without linear model selection
     if(input$line == TRUE) {
-      ggplot(data = plot_boroughs_Midtown(), aes_string(x = "month", y = "units", color = "year")) +
+    
+    
+      
+   ggplot(data = plot_boroughs_Midtown(), aes_string(x = "month", y = "units", color = "year")) +
+        geom_smooth(method="loess") +
         geom_point() +
-        geom_smooth(method=loess) +
         labs(x = "Month",
              y = "Units",
              title = "Availability of Rental Units Over the Last 8 Years",
@@ -198,12 +217,15 @@ server <- function(input, output) {
     }
     else{
       ggplot(data = plot_boroughs_Midtown(), aes_string(x = "month", y = "units", color = "year")) +
-        geom_point() +
-        labs(x = "Month",
-             y = "Units",
-             title = "Availability of Rental Units Over the Last 8 Years",
-             subtitle = "Helpful analysis for deciding when to buy")
+         
+         geom_point() +
+         labs(x = "Month",
+              y = "Units",
+              title = "Availability of Rental Units Over the Last 8 Years",
+              subtitle = "Helpful analysis for deciding when to buy")
     }
+
+    
   })
   
   output$plot_boroughs_Upper_East <- renderPlot({
